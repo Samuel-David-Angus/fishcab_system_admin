@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 
 class AdminLoginModel {
   //fields
-  String? adminEmail;
-  String? adminPassword;
+  String adminEmail = "";
+  String adminPassword = "";
 
   //getters
   String? getAdminEmail() => adminEmail;
@@ -19,22 +19,8 @@ class AdminLoginModel {
   void setAdminPassword(String adminPassword) {
     this.adminPassword = adminPassword;
   }
-}
 
-class AdminLoginController {
-
-}
-
-class AdminLoginView extends StatefulWidget {
-  const AdminLoginView({super.key});
-
-  @override
-  State<AdminLoginView> createState() => _AdminLoginViewState();
-}
-class _AdminLoginViewState extends State<AdminLoginView> {
-  String adminEmail = "";
-  String adminPassword = "";
-  allowAdminToLogin() async {
+  allowAdminToLogin(context) async {
     User? currentAdmin;
     SnackBar snackBar = const SnackBar(
       content: Text(
@@ -51,18 +37,18 @@ class _AdminLoginViewState extends State<AdminLoginView> {
         email: adminEmail,
         password: adminPassword
     ).then((fAuth){
-        currentAdmin = fAuth.user;
+      currentAdmin = fAuth.user;
     }).catchError((onError) {
       final snackBar = SnackBar(
-          content: Text(
-              "Error occured: $onError",
-              style: const TextStyle (
-                fontSize: 36,
-                color: Colors.black,
-              ),
+        content: Text(
+          "Error occured: $onError",
+          style: const TextStyle (
+            fontSize: 36,
+            color: Colors.black,
           ),
-          backgroundColor: Colors.pinkAccent,
-          duration: const Duration(seconds: 5),
+        ),
+        backgroundColor: Colors.pinkAccent,
+        duration: const Duration(seconds: 5),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     });
@@ -86,6 +72,32 @@ class _AdminLoginViewState extends State<AdminLoginView> {
         }
       });
     }
+  }
+
+}
+
+class AdminLoginController {
+  final AdminLoginModel model = AdminLoginModel();
+
+  login(String email, String password, BuildContext context) {
+    model.setAdminEmail(email);
+    model.setAdminPassword(password);
+    model.allowAdminToLogin(context);
+  }
+}
+
+class AdminLoginView extends StatefulWidget {
+  const AdminLoginView({super.key});
+
+  @override
+  State<AdminLoginView> createState() => _AdminLoginViewState();
+}
+class _AdminLoginViewState extends State<AdminLoginView> {
+  final AdminLoginController controller = AdminLoginController();
+  String adminEmail = "";
+  String adminPassword = "";
+  displayError() {
+
   }
   @override
   Widget build(BuildContext context) {
@@ -162,7 +174,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                   const SizedBox(height: 30,),
                   ElevatedButton(
                     onPressed: () {
-                      allowAdminToLogin();
+                      controller.login(adminEmail, adminPassword, context);
                     },
                     style: ButtonStyle(
                       padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 100, vertical: 20)),
