@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fishcab_system_admin/home_screen.dart';
+import 'package:fishcab_system_admin/homescreen/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class AdminLoginModel {

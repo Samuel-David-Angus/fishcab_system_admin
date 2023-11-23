@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fishcab_system_admin/authentication/login_screen.dart';
-import 'package:fishcab_system_admin/home_screen.dart';
+import 'package:fishcab_system_admin/homescreen/home_screen.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const AdminLoginView(),
+      home: const MyHomePage(title: "Admin"),
     );
   }
 }
