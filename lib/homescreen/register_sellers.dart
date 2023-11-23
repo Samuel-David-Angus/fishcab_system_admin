@@ -17,6 +17,7 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
       child: Container(
         width: 300,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
               onChanged: (value) {
@@ -41,6 +42,7 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
 
               ),
             ),
+            const SizedBox(height: 10),
             TextField(
               onChanged: (value) {
                 sellerPassword = value;
@@ -65,6 +67,7 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
 
               ),
             ),
+            const SizedBox(height: 10),
             TextField(
               onChanged: (value) {
                 sellerUsername = value;
@@ -88,6 +91,7 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
 
               ),
             ),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
 
@@ -98,7 +102,7 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
                   foregroundColor: MaterialStateProperty.all<Color>(Colors.pinkAccent)
               ),
               child: const Text (
-                "Login",
+                "Register",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
