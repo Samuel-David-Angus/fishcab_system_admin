@@ -1,3 +1,4 @@
+import 'package:fishcab_system_admin/homescreen/manage_users.dart';
 import 'package:fishcab_system_admin/homescreen/register_sellers.dart';
 import 'package:flutter/material.dart';
 
@@ -95,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
       case 0:
         return const RegisterSellerView();
       default:
-        return MyHomePage(title: 'huh');
+        return ManageUsersView();
     }
   }
 }
