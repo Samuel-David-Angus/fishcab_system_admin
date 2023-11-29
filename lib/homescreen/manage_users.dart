@@ -44,12 +44,27 @@ class ManageUsersView extends StatefulWidget {
 
 class _ManageUsersViewState extends State<ManageUsersView> {
   ManageUsersController controller = ManageUsersController();
+  late final Future<List<DataRow>> raw_rows = controller.getRowData();
+  int? sortColumnIndex;
+  bool isAscending = false;
+  List<DataRow> rows = <DataRow>[];
 
+  void onSort(int columnIndex, bool ascending) {
+    rows.sort((r1, r2) {
+      String t1 = (r1.cells[columnIndex].child as Text).data!.toLowerCase();
+      String t2 = (r2.cells[columnIndex].child as Text).data!.toLowerCase();
+      return ascending ? t1.compareTo(t2) : t2.compareTo(t1);
+    } );
+    setState(() {
+      sortColumnIndex = columnIndex;
+      isAscending = ascending;
 
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<dynamic>>(
-        future: controller.getRowData(),
+        future: raw_rows,
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {  // AsyncSnapshot<Your object type>
           if( snapshot.connectionState == ConnectionState.waiting){
             return  Center(child: Text('Please wait its loading...'));
@@ -57,13 +72,24 @@ class _ManageUsersViewState extends State<ManageUsersView> {
             if (snapshot.hasError)
               return Center(child: Text('Error: ${snapshot.error}'));
             else {
-              List<DataRow> rows = snapshot.data;
+              rows = snapshot.data;
               return DataTable(
-                  columns: const <DataColumn> [
-                    DataColumn(label: Text('First Name')),
-                    DataColumn(label: Text('Last Name')),
-                    DataColumn(label: Text('Email')),
-                    DataColumn(label: Text('Type')),
+                sortAscending: isAscending,
+                  sortColumnIndex: sortColumnIndex,
+                  columns: <DataColumn> [
+                    DataColumn(
+                        label: Text('First Name'),
+                        onSort: onSort),
+                    DataColumn(
+                        label: Text('Last Name'),
+                        onSort: onSort),
+
+                    DataColumn(
+                        label: Text('Email'),
+                        onSort: onSort),
+                    DataColumn(
+                        label: Text('Type'),
+                        onSort: onSort),
                   ],
                   rows: rows);
             }// snapshot.data  :- get your object which is pass from your downloadData() function
