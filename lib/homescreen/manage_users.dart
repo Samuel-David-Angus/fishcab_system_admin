@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ManageUsersModel {
@@ -16,13 +17,33 @@ class ManageUsersModel {
 class ManageUsersController {
   ManageUsersModel model = ManageUsersModel();
 
-  Future<List<DataRow>> getRowData() async{
+  Future<List<DataRow>> getRowData(context) async{
     List<dynamic> list = await model.getList();
 
     List<DataRow> rows = <DataRow>[];
 
     for (var d in list) {
-      DataRow dataRow = DataRow(cells: <DataCell>[
+      DataRow dataRow = DataRow(
+          onSelectChanged: (bool? selected) {
+            showDialog(context: context,
+                builder: (BuildContext b) {
+                  return Expanded(
+                      child: SimpleDialog(
+                        title:const Text('Actions'),
+                        children: <Widget>[
+                          SimpleDialogOption(
+                            onPressed: () async {
+                              await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
+                            },
+                            child:const Text('Reset Password'),
+                          ),
+
+                        ],
+                      ),);
+                }
+            );
+          },
+          cells: <DataCell>[
         DataCell(Text(d['firstName'])),
         DataCell(Text(d['lastName'])),
         DataCell(Text(d['email'])),
@@ -44,10 +65,11 @@ class ManageUsersView extends StatefulWidget {
 
 class _ManageUsersViewState extends State<ManageUsersView> {
   ManageUsersController controller = ManageUsersController();
-  late final Future<List<DataRow>> raw_rows = controller.getRowData();
+  late final Future<List<DataRow>> raw_rows = controller.getRowData(context);
   int? sortColumnIndex;
   bool isAscending = false;
   List<DataRow> rows = <DataRow>[];
+
 
   void onSort(int columnIndex, bool ascending) {
     rows.sort((r1, r2) {
@@ -74,6 +96,7 @@ class _ManageUsersViewState extends State<ManageUsersView> {
             else {
               rows = snapshot.data;
               return DataTable(
+                showCheckboxColumn: false,
                 sortAscending: isAscending,
                   sortColumnIndex: sortColumnIndex,
                   columns: <DataColumn> [
