@@ -35,7 +35,7 @@ class ManageUsersController {
                             onPressed: () async {
                               await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
                             },
-                            child:const Text('Reset password'),
+                            child:const Text('Reset Password'),
                           ),
 
                         ],
