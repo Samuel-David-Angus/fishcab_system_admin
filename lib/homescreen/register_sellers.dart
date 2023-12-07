@@ -9,15 +9,13 @@ class RegisterSellerModel {
   String sellerLname = "";
   registerSeller(context) async {
     User? seller;
-    await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: sellerEmail,
-        password: sellerPassword).then((result) {
-          seller = result.user;
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(email: sellerEmail, password: sellerPassword).then((result) {
+      seller = result.user;
     }).catchError((onError) {
       final snackBar = SnackBar(
         content: Text(
           "Error occured: $onError",
-          style: const TextStyle (
+          style: const TextStyle(
             fontSize: 36,
             color: Colors.black,
           ),
@@ -29,17 +27,24 @@ class RegisterSellerModel {
     });
 
     if (seller != null) {
-      await FirebaseFirestore.instance.collection("users").doc(seller!.uid).set(
-          {
-            'email': sellerEmail,
-            'firstName': sellerFname,
-            'lastName': sellerLname,
-            'type': 'seller'
-          });
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(seller!.uid)
+          .set({'email': sellerEmail, 'firstName': sellerFname, 'lastName': sellerLname, 'type': 'seller'});
+      await FirebaseFirestore.instance.collection("seller_info").doc(seller!.uid).set({
+        'loc_end': new GeoPoint(10.294538836749576, 123.88112327116464),
+        'loc_end_address': 'End Location Not Set',
+        'loc_start': new GeoPoint(10.294472860968513, 123.88159533992028),
+        'loc_start_address': 'Start Location Not Set',
+        'sched_days': [],
+        'sched_end': '06:00',
+        'sched_start': '07:00',
+        'routeStarted': false,
+      });
       const snackBar = SnackBar(
         content: Text(
           "Successfully added seller",
-          style: TextStyle (
+          style: TextStyle(
             fontSize: 36,
             color: Colors.black,
           ),
@@ -90,21 +95,18 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
               },
               style: const TextStyle(fontSize: 16, color: Colors.black),
               decoration: const InputDecoration(
-                  enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.deepPurpleAccent,
-                        width: 2,
-                      )
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.amber,
-                        width: 2,
-                      )
-                  ),
-                  hintText: "Email",
-                  hintStyle: TextStyle(color: Colors.grey),
-
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                  color: Colors.deepPurpleAccent,
+                  width: 2,
+                )),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                  color: Colors.amber,
+                  width: 2,
+                )),
+                hintText: "Email",
+                hintStyle: TextStyle(color: Colors.grey),
               ),
             ),
             const SizedBox(height: 10),
@@ -115,21 +117,18 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
               obscureText: true,
               style: const TextStyle(fontSize: 16, color: Colors.black),
               decoration: const InputDecoration(
-                  enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.deepPurpleAccent,
-                        width: 2,
-                      )
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.amber,
-                        width: 2,
-                      )
-                  ),
-                  hintText: "Password",
-                  hintStyle: TextStyle(color: Colors.grey),
-
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                  color: Colors.deepPurpleAccent,
+                  width: 2,
+                )),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                  color: Colors.amber,
+                  width: 2,
+                )),
+                hintText: "Password",
+                hintStyle: TextStyle(color: Colors.grey),
               ),
             ),
             const SizedBox(height: 10),
@@ -141,19 +140,16 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
               decoration: const InputDecoration(
                 enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: Colors.deepPurpleAccent,
-                      width: 2,
-                    )
-                ),
+                  color: Colors.deepPurpleAccent,
+                  width: 2,
+                )),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: Colors.amber,
-                      width: 2,
-                    )
-                ),
+                  color: Colors.amber,
+                  width: 2,
+                )),
                 hintText: "First name",
                 hintStyle: TextStyle(color: Colors.grey),
-
               ),
             ),
             const SizedBox(height: 10),
@@ -165,19 +161,16 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
               decoration: const InputDecoration(
                 enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: Colors.deepPurpleAccent,
-                      width: 2,
-                    )
-                ),
+                  color: Colors.deepPurpleAccent,
+                  width: 2,
+                )),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: Colors.amber,
-                      width: 2,
-                    )
-                ),
+                  color: Colors.amber,
+                  width: 2,
+                )),
                 hintText: "Last name",
                 hintStyle: TextStyle(color: Colors.grey),
-
               ),
             ),
             const SizedBox(height: 10),
@@ -188,9 +181,8 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
               style: ButtonStyle(
                   padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 100, vertical: 20)),
                   backgroundColor: MaterialStateProperty.all<Color>(Colors.cyan),
-                  foregroundColor: MaterialStateProperty.all<Color>(Colors.pinkAccent)
-              ),
-              child: const Text (
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.pinkAccent)),
+              child: const Text(
                 "Register",
                 style: TextStyle(
                   color: Colors.white,
@@ -205,4 +197,3 @@ class _RegisterSellerViewState extends State<RegisterSellerView> {
     );
   }
 }
-
