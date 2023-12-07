@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fishcab_system_admin/reviews/see_reviews.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ManageUsersModel {
 
@@ -17,31 +21,119 @@ class ManageUsersModel {
 class ManageUsersController {
   ManageUsersModel model = ManageUsersModel();
 
+  void sendPushMessage(String body, String title, String token) async {
+    try {
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization':
+          'key=AAAA0t4TDS0:APA91bH2R9XarRRw_e1-UYYnmFvX1FrFGBc7AWAT6u5MVJH5V2NIn5LmoFb70h2UqmW5oluK4A_63xsZV3t74U5KDCNd-WlhAe1kLgUukUjwWg8FgTzKGF6AnbuHpfW_6hKJJB-nw0Nb',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'notification': <String, dynamic>{
+              'body': body,
+              'title': title,
+            },
+            'priority': 'high',
+            'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
+            "to": token,
+          },
+        ),
+      );
+      print('done');
+    } catch (e) {
+      print("error push notification");
+    }
+  }
+
+  displayDialog(context, Widget widget) {
+    showDialog(context: context,
+        builder: (BuildContext context) {
+          return Expanded(child: widget);
+        });
+  }
+
   Future<List<DataRow>> getRowData(context) async{
     List<dynamic> list = await model.getList();
 
     List<DataRow> rows = <DataRow>[];
+    String message = "";
+    String uid = "";
 
     for (var d in list) {
       DataRow dataRow = DataRow(
           onSelectChanged: (bool? selected) {
-            showDialog(context: context,
-                builder: (BuildContext b) {
-                  return Expanded(
-                      child: SimpleDialog(
-                        title:const Text('Actions'),
-                        children: <Widget>[
-                          SimpleDialogOption(
-                            onPressed: () async {
-                              await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
-                            },
-                            child:const Text('Reset Password'),
-                          ),
+            displayDialog(
+                context,
+                SimpleDialog(
+                  title:const Text('Actions'),
+                  children: <Widget>[
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
+                      },
+                      child:const Text('Reset Password'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        displayDialog(
+                            context,
+                            AlertDialog(
+                              title: const Text("Send Notification Message"),
+                              content: TextField(
+                                onChanged: (value){
+                                  message = value;
+                                },
+                                decoration: const InputDecoration(
+                                  hintText: "Type message here"
+                                ),
 
-                        ],
-                      ),);
-                }
-            );
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('Send'),
+                                  onPressed: () async {
+
+                                    String token = "";
+                                    Navigator.of(context).pop();
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .where('email', isEqualTo: d['email'])
+                                        .get()
+                                        .then((value) {
+                                          value.docs.forEach((element) {uid = element.id;});
+                                    });
+                                    await FirebaseFirestore.instance.collection('tokens').doc(uid).get()
+                                    .then((value) => {token = value['token']});
+                                    sendPushMessage(message, "Message from admin", token);
+                                  },
+                                ),
+                              ],
+                            ));
+                      },
+                      child:const Text('Send Notification Message'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .where('email', isEqualTo: d['email'])
+                            .get()
+                            .then((value) {
+                          value.docs.forEach((element) {uid = element.id;});
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ViewReviewView(reviewee: uid)),
+                        );
+                      },
+                      child:const Text('See Reviews'),
+                    ),
+                  ],
+                ));
           },
           cells: <DataCell>[
         DataCell(Text(d['firstName'])),
@@ -95,26 +187,29 @@ class _ManageUsersViewState extends State<ManageUsersView> {
               return Center(child: Text('Error: ${snapshot.error}'));
             else {
               rows = snapshot.data;
-              return DataTable(
-                showCheckboxColumn: false,
-                sortAscending: isAscending,
-                  sortColumnIndex: sortColumnIndex,
-                  columns: <DataColumn> [
-                    DataColumn(
-                        label: Text('First Name'),
-                        onSort: onSort),
-                    DataColumn(
-                        label: Text('Last Name'),
-                        onSort: onSort),
+              return SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: DataTable(
+                  showCheckboxColumn: false,
+                  sortAscending: isAscending,
+                    sortColumnIndex: sortColumnIndex,
+                    columns: <DataColumn> [
+                      DataColumn(
+                          label: Text('First Name'),
+                          onSort: onSort),
+                      DataColumn(
+                          label: Text('Last Name'),
+                          onSort: onSort),
 
-                    DataColumn(
-                        label: Text('Email'),
-                        onSort: onSort),
-                    DataColumn(
-                        label: Text('Type'),
-                        onSort: onSort),
-                  ],
-                  rows: rows);
+                      DataColumn(
+                          label: Text('Email'),
+                          onSort: onSort),
+                      DataColumn(
+                          label: Text('Type'),
+                          onSort: onSort),
+                    ],
+                    rows: rows),
+              );
             }// snapshot.data  :- get your object which is pass from your downloadData() function
           }
         },);
