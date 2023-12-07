@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ManageUsersModel {
 
@@ -17,31 +20,102 @@ class ManageUsersModel {
 class ManageUsersController {
   ManageUsersModel model = ManageUsersModel();
 
+  void sendPushMessage(String body, String title, String token) async {
+    try {
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization':
+          'key=AAAA0t4TDS0:APA91bH2R9XarRRw_e1-UYYnmFvX1FrFGBc7AWAT6u5MVJH5V2NIn5LmoFb70h2UqmW5oluK4A_63xsZV3t74U5KDCNd-WlhAe1kLgUukUjwWg8FgTzKGF6AnbuHpfW_6hKJJB-nw0Nb',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'notification': <String, dynamic>{
+              'body': body,
+              'title': title,
+            },
+            'priority': 'high',
+            'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
+            "to": token,
+          },
+        ),
+      );
+      print('done');
+    } catch (e) {
+      print("error push notification");
+    }
+  }
+
+  displayDialog(context, Widget widget) {
+    showDialog(context: context,
+        builder: (BuildContext context) {
+          return Expanded(child: widget);
+        });
+  }
+
   Future<List<DataRow>> getRowData(context) async{
     List<dynamic> list = await model.getList();
 
     List<DataRow> rows = <DataRow>[];
+    String message = "";
 
     for (var d in list) {
       DataRow dataRow = DataRow(
           onSelectChanged: (bool? selected) {
-            showDialog(context: context,
-                builder: (BuildContext b) {
-                  return Expanded(
-                      child: SimpleDialog(
-                        title:const Text('Actions'),
-                        children: <Widget>[
-                          SimpleDialogOption(
-                            onPressed: () async {
-                              await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
-                            },
-                            child:const Text('Reset Password'),
-                          ),
+            displayDialog(
+                context,
+                SimpleDialog(
+                  title:const Text('Actions'),
+                  children: <Widget>[
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.sendPasswordResetEmail(email: d['email']);
+                      },
+                      child:const Text('Reset Password'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        displayDialog(
+                            context,
+                            AlertDialog(
+                              title: const Text("Send Notification Message"),
+                              content: TextField(
+                                onChanged: (value){
+                                  message = value;
+                                },
+                                decoration: const InputDecoration(
+                                  hintText: "Type message here"
+                                ),
 
-                        ],
-                      ),);
-                }
-            );
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('Send'),
+                                  onPressed: () async {
+                                    String uid = "";
+                                    String token = "";
+                                    Navigator.of(context).pop();
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .where('email', isEqualTo: d['email'])
+                                        .get()
+                                        .then((value) {
+                                          value.docs.forEach((element) {uid = element.id;});
+                                    });
+                                    await FirebaseFirestore.instance.collection('tokens').doc(uid).get()
+                                    .then((value) => {token = value['token']});
+                                    sendPushMessage(message, "Message from admin", token);
+                                  },
+                                ),
+                              ],
+                            ));
+                      },
+                      child:const Text('Send Notification Message'),
+                    ),
+                  ],
+                ));
           },
           cells: <DataCell>[
         DataCell(Text(d['firstName'])),

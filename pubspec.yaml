@@ -39,6 +39,7 @@ dependencies:
   firebase_auth: ^4.13.0
   cloud_firestore: ^4.13.0
   vertical_tabs_flutter: ^1.0.0
+  http: ^1.1.0
 
 
 dev_dependencies:
