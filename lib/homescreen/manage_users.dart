@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fishcab_system_admin/reviews/see_reviews.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -59,6 +60,7 @@ class ManageUsersController {
 
     List<DataRow> rows = <DataRow>[];
     String message = "";
+    String uid = "";
 
     for (var d in list) {
       DataRow dataRow = DataRow(
@@ -94,7 +96,7 @@ class ManageUsersController {
                                 TextButton(
                                   child: const Text('Send'),
                                   onPressed: () async {
-                                    String uid = "";
+
                                     String token = "";
                                     Navigator.of(context).pop();
                                     await FirebaseFirestore.instance
@@ -113,6 +115,22 @@ class ManageUsersController {
                             ));
                       },
                       child:const Text('Send Notification Message'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .where('email', isEqualTo: d['email'])
+                            .get()
+                            .then((value) {
+                          value.docs.forEach((element) {uid = element.id;});
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ViewReviewView(reviewee: uid)),
+                        );
+                      },
+                      child:const Text('See Reviews'),
                     ),
                   ],
                 ));
@@ -169,26 +187,29 @@ class _ManageUsersViewState extends State<ManageUsersView> {
               return Center(child: Text('Error: ${snapshot.error}'));
             else {
               rows = snapshot.data;
-              return DataTable(
-                showCheckboxColumn: false,
-                sortAscending: isAscending,
-                  sortColumnIndex: sortColumnIndex,
-                  columns: <DataColumn> [
-                    DataColumn(
-                        label: Text('First Name'),
-                        onSort: onSort),
-                    DataColumn(
-                        label: Text('Last Name'),
-                        onSort: onSort),
+              return SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: DataTable(
+                  showCheckboxColumn: false,
+                  sortAscending: isAscending,
+                    sortColumnIndex: sortColumnIndex,
+                    columns: <DataColumn> [
+                      DataColumn(
+                          label: Text('First Name'),
+                          onSort: onSort),
+                      DataColumn(
+                          label: Text('Last Name'),
+                          onSort: onSort),
 
-                    DataColumn(
-                        label: Text('Email'),
-                        onSort: onSort),
-                    DataColumn(
-                        label: Text('Type'),
-                        onSort: onSort),
-                  ],
-                  rows: rows);
+                      DataColumn(
+                          label: Text('Email'),
+                          onSort: onSort),
+                      DataColumn(
+                          label: Text('Type'),
+                          onSort: onSort),
+                    ],
+                    rows: rows),
+              );
             }// snapshot.data  :- get your object which is pass from your downloadData() function
           }
         },);
