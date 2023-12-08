@@ -34,7 +34,8 @@ class RegisterSellerModel {
             'email': sellerEmail,
             'firstName': sellerFname,
             'lastName': sellerLname,
-            'type': 'seller'
+            'type': 'seller',
+            'status': 'enabled'
           });
       const snackBar = SnackBar(
         content: Text(

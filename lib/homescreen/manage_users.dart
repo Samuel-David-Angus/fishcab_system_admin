@@ -55,6 +55,46 @@ class ManageUsersController {
         });
   }
 
+  void showAccountBannedDialog(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Notice'),
+            content: Text('Account status has been disabled.'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); 
+                },
+                child: Text('confirm'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    void showAccountEnabledDialog(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Notice'),
+            content: Text('Account status has been enabled.'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); 
+                },
+                child: Text('confirm'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
   Future<List<DataRow>> getRowData(context) async{
     List<dynamic> list = await model.getList();
 
@@ -131,6 +171,57 @@ class ManageUsersController {
                         );
                       },
                       child:const Text('See Reviews'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        displayDialog(
+                            context,
+                            AlertDialog(
+                              title: const Text("Update User Account Status"),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('Enable'),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .where('email', isEqualTo: d['email'])
+                                        .get()
+                                        .then((value) {
+                                          value.docs.forEach((element) {uid = element.id;});
+                                    });
+                                    await FirebaseFirestore.instance.collection("users").doc(uid).update(
+                                    {
+                                      'status': 'enabled'
+                                    }).then((value) {
+                                      showAccountEnabledDialog(context);
+                                    });
+                                  },
+                                ),
+                                TextButton(
+                                  child: const Text('Disable'),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .where('email', isEqualTo: d['email'])
+                                        .get()
+                                        .then((value) {
+                                          value.docs.forEach((element) {uid = element.id;});
+                                    });
+                                    await FirebaseFirestore.instance.collection("users").doc(uid).update(
+                                    {
+                                      'status': 'disabled'
+                                    }).then((value) {
+                                      showAccountBannedDialog(context);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ));
+                      },
+                      child:const Text('Update User Account Status'),
                     ),
                   ],
                 ));
