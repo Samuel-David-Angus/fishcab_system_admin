@@ -30,7 +30,8 @@ class RegisterSellerModel {
       await FirebaseFirestore.instance
           .collection("users")
           .doc(seller!.uid)
-          .set({'email': sellerEmail, 'firstName': sellerFname, 'lastName': sellerLname, 'type': 'seller'});
+          .set({'email': sellerEmail, 'firstName': sellerFname, 'lastName': sellerLname, 'type': 'seller', 'status': 'enabled'});
+
       await FirebaseFirestore.instance.collection("seller_info").doc(seller!.uid).set({
         'loc_end': new GeoPoint(10.294538836749576, 123.88112327116464),
         'loc_end_address': 'End Location Not Set',
@@ -42,6 +43,7 @@ class RegisterSellerModel {
         'sched_start': '07:00',
         'routeStarted': false,
       });
+
       const snackBar = SnackBar(
         content: Text(
           "Successfully added seller",
