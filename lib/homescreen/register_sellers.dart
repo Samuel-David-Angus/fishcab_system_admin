@@ -36,6 +36,7 @@ class RegisterSellerModel {
         'loc_end_address': 'End Location Not Set',
         'loc_start': new GeoPoint(10.294472860968513, 123.88159533992028),
         'loc_start_address': 'Start Location Not Set',
+        'loc_current': new GeoPoint(10.294538836749576, 123.88112327116464),
         'sched_days': [],
         'sched_end': '06:00',
         'sched_start': '07:00',
