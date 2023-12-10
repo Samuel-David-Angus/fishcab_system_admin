@@ -16,6 +16,31 @@ class ManageUsersModel {
 
     return allData;
   }
+  Future<String> getUID(String email) async {
+    String uid = "";
+    await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get()
+        .then((value) {
+      value.docs.forEach((element) {uid = element.id;});
+    });
+    return uid;
+  }
+
+  Future<String> getToken(String uid) async {
+    String token = "";
+    await FirebaseFirestore.instance.collection('tokens').doc(uid).get()
+        .then((value) => {token = value['token']});
+    return token;
+  }
+
+  updateStatus(String status, String uid) async {
+    await FirebaseFirestore.instance.collection("users").doc(uid).update(
+        {
+          'status': status
+        });
+  }
 }
 
 class ManageUsersController {
@@ -51,48 +76,30 @@ class ManageUsersController {
   displayDialog(context, Widget widget) {
     showDialog(context: context,
         builder: (BuildContext context) {
-          return Expanded(child: widget);
+          return Container(child: widget);
         });
   }
 
-  void showAccountBannedDialog(BuildContext context) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Notice'),
-            content: Text('Account status has been disabled.'),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); 
-                },
-                child: Text('confirm'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-
-    void showAccountEnabledDialog(BuildContext context) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Notice'),
-            content: Text('Account status has been enabled.'),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); 
-                },
-                child: Text('confirm'),
-              ),
-            ],
-          );
-        },
-      );
+    updateUser(String status, String uid, context) async {
+      await model.updateStatus(status, uid).then((value) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Notice'),
+              content: Text('Account status has been $status.'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      });
     }
 
   Future<List<DataRow>> getRowData(context) async{
@@ -100,9 +107,12 @@ class ManageUsersController {
 
     List<DataRow> rows = <DataRow>[];
     String message = "";
-    String uid = "";
+
 
     for (var d in list) {
+      if (d['status'] == null) {
+        d['status'] = "not set";
+      }
       DataRow dataRow = DataRow(
           onSelectChanged: (bool? selected) {
             displayDialog(
@@ -136,18 +146,9 @@ class ManageUsersController {
                                 TextButton(
                                   child: const Text('Send'),
                                   onPressed: () async {
-
-                                    String token = "";
+                                    String uid = await model.getUID(d['email']);
+                                    String token = await model.getToken(uid);
                                     Navigator.of(context).pop();
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .where('email', isEqualTo: d['email'])
-                                        .get()
-                                        .then((value) {
-                                          value.docs.forEach((element) {uid = element.id;});
-                                    });
-                                    await FirebaseFirestore.instance.collection('tokens').doc(uid).get()
-                                    .then((value) => {token = value['token']});
                                     sendPushMessage(message, "Message from admin", token);
                                   },
                                 ),
@@ -158,13 +159,7 @@ class ManageUsersController {
                     ),
                     SimpleDialogOption(
                       onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .where('email', isEqualTo: d['email'])
-                            .get()
-                            .then((value) {
-                          value.docs.forEach((element) {uid = element.id;});
-                        });
+                        String uid = await model.getUID(d['email']);
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => ViewReviewView(reviewee: uid)),
@@ -184,38 +179,16 @@ class ManageUsersController {
                                   child: const Text('Enable'),
                                   onPressed: () async {
                                     Navigator.of(context).pop();
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .where('email', isEqualTo: d['email'])
-                                        .get()
-                                        .then((value) {
-                                          value.docs.forEach((element) {uid = element.id;});
-                                    });
-                                    await FirebaseFirestore.instance.collection("users").doc(uid).update(
-                                    {
-                                      'status': 'enabled'
-                                    }).then((value) {
-                                      showAccountEnabledDialog(context);
-                                    });
+                                    String uid = await model.getUID(d['email']);
+                                    updateUser('enabled', uid, context);
                                   },
                                 ),
                                 TextButton(
                                   child: const Text('Disable'),
                                   onPressed: () async {
                                     Navigator.of(context).pop();
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .where('email', isEqualTo: d['email'])
-                                        .get()
-                                        .then((value) {
-                                          value.docs.forEach((element) {uid = element.id;});
-                                    });
-                                    await FirebaseFirestore.instance.collection("users").doc(uid).update(
-                                    {
-                                      'status': 'disabled'
-                                    }).then((value) {
-                                      showAccountBannedDialog(context);
-                                    });
+                                    String uid = await model.getUID(d['email']);
+                                    updateUser('disabled', uid, context);
                                   },
                                 ),
                               ],
@@ -231,6 +204,7 @@ class ManageUsersController {
         DataCell(Text(d['lastName'])),
         DataCell(Text(d['email'])),
         DataCell(Text(d['type'])),
+        DataCell(Text(d['status'])),
       ]);
       rows.add(dataRow);
     }
@@ -272,11 +246,11 @@ class _ManageUsersViewState extends State<ManageUsersView> {
         future: raw_rows,
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {  // AsyncSnapshot<Your object type>
           if( snapshot.connectionState == ConnectionState.waiting){
-            return  Center(child: Text('Please wait its loading...'));
+            return const Center(child: Text('Please wait its loading...'));
           }else{
-            if (snapshot.hasError)
+            if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
-            else {
+            } else {
               rows = snapshot.data;
               return SingleChildScrollView(
                 scrollDirection: Axis.vertical,
@@ -286,18 +260,22 @@ class _ManageUsersViewState extends State<ManageUsersView> {
                     sortColumnIndex: sortColumnIndex,
                     columns: <DataColumn> [
                       DataColumn(
-                          label: Text('First Name'),
+                          label: const Text('First Name'),
                           onSort: onSort),
                       DataColumn(
-                          label: Text('Last Name'),
+                          label: const Text('Last Name'),
                           onSort: onSort),
 
                       DataColumn(
-                          label: Text('Email'),
+                          label: const Text('Email'),
                           onSort: onSort),
                       DataColumn(
-                          label: Text('Type'),
+                          label: const Text('Type'),
                           onSort: onSort),
+                      DataColumn(
+                          label: const Text('Status'),
+                          onSort: onSort),
+
                     ],
                     rows: rows),
               );
