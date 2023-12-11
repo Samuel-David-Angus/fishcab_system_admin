@@ -92,7 +92,10 @@ class ReviewController {
     if (list.isNotEmpty) {
       reviews.insert(0, Text("Average Rating $average stars"));
     } else {
-      reviews.insert(0, const Text("No reviews yet"));
+      reviews.insert(0, const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text("No reviews yet",),
+      ));
     }
 
     return reviews;

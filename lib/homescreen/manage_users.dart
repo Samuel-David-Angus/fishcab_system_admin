@@ -12,7 +12,9 @@ class ManageUsersModel {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection("users").get();
 
     // Get data from docs and convert map to List
-    final allData = querySnapshot.docs.map((doc) => doc.data()).toList();
+    final List<dynamic> allData = querySnapshot.docs.map((doc) => doc.data()).toList();
+
+
 
     return allData;
   }
@@ -40,6 +42,25 @@ class ManageUsersModel {
         {
           'status': status
         });
+  }
+
+  Future<String> getAverageRating(String uid) async {
+    String rating = "no ratings";
+    double average = 0;
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection("reviews").doc(uid).collection("user_reviews").get();
+
+    final List<dynamic> allData = querySnapshot.docs.map((doc) => doc.data()).toList();
+    for (var data in allData) {
+      int star = data['starRating'];
+      average += star as double;
+    }
+
+    if (allData.isNotEmpty) {
+      average /= allData.length;
+      rating = average.toString();
+
+    }
+    return rating;
   }
 }
 
@@ -80,8 +101,9 @@ class ManageUsersController {
         });
   }
 
-    updateUser(String status, String uid, context) async {
+    updateUser(String status, String uid, context, _ManageUsersViewState state) async {
       await model.updateStatus(status, uid).then((value) {
+        state.updateData();
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -99,10 +121,11 @@ class ManageUsersController {
             );
           },
         );
+
       });
     }
 
-  Future<List<DataRow>> getRowData(context) async{
+  Future<List<DataRow>> getRowData(context, _ManageUsersViewState state) async{
     List<dynamic> list = await model.getList();
 
     List<DataRow> rows = <DataRow>[];
@@ -180,7 +203,7 @@ class ManageUsersController {
                                   onPressed: () async {
                                     Navigator.of(context).pop();
                                     String uid = await model.getUID(d['email']);
-                                    updateUser('enabled', uid, context);
+                                    updateUser('enabled', uid, context, state);
                                   },
                                 ),
                                 TextButton(
@@ -188,7 +211,8 @@ class ManageUsersController {
                                   onPressed: () async {
                                     Navigator.of(context).pop();
                                     String uid = await model.getUID(d['email']);
-                                    updateUser('disabled', uid, context);
+                                    updateUser('disabled', uid, context, state);
+
                                   },
                                 ),
                               ],
@@ -205,6 +229,7 @@ class ManageUsersController {
         DataCell(Text(d['email'])),
         DataCell(Text(d['type'])),
         DataCell(Text(d['status'])),
+
       ]);
       rows.add(dataRow);
     }
@@ -222,10 +247,16 @@ class ManageUsersView extends StatefulWidget {
 
 class _ManageUsersViewState extends State<ManageUsersView> {
   ManageUsersController controller = ManageUsersController();
-  late final Future<List<DataRow>> raw_rows = controller.getRowData(context);
+  late Future<List<DataRow>> raw_rows = controller.getRowData(context, this);
   int? sortColumnIndex;
   bool isAscending = false;
   List<DataRow> rows = <DataRow>[];
+
+  void updateData() {
+    setState(() {
+      raw_rows = controller.getRowData(context, this);
+    });
+  }
 
 
   void onSort(int columnIndex, bool ascending) {
@@ -253,31 +284,35 @@ class _ManageUsersViewState extends State<ManageUsersView> {
             } else {
               rows = snapshot.data;
               return SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: DataTable(
-                  showCheckboxColumn: false,
-                  sortAscending: isAscending,
-                    sortColumnIndex: sortColumnIndex,
-                    columns: <DataColumn> [
-                      DataColumn(
-                          label: const Text('First Name'),
-                          onSort: onSort),
-                      DataColumn(
-                          label: const Text('Last Name'),
-                          onSort: onSort),
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: DataTable(
+                    showCheckboxColumn: false,
+                    sortAscending: isAscending,
+                      sortColumnIndex: sortColumnIndex,
+                      columns: <DataColumn> [
+                        DataColumn(
+                            label: const Text('First Name'),
+                            onSort: onSort),
+                        DataColumn(
+                            label: const Text('Last Name'),
+                            onSort: onSort),
 
-                      DataColumn(
-                          label: const Text('Email'),
-                          onSort: onSort),
-                      DataColumn(
-                          label: const Text('Type'),
-                          onSort: onSort),
-                      DataColumn(
-                          label: const Text('Status'),
-                          onSort: onSort),
+                        DataColumn(
+                            label: const Text('Email'),
+                            onSort: onSort),
+                        DataColumn(
+                            label: const Text('Type'),
+                            onSort: onSort),
+                        DataColumn(
+                            label: const Text('Status'),
+                            onSort: onSort),
 
-                    ],
-                    rows: rows),
+
+                      ],
+                      rows: rows),
+                ),
               );
             }// snapshot.data  :- get your object which is pass from your downloadData() function
           }
